@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MFC Staging Test Plan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+  :root{--bg:#0d0f14;--surface:#141720;--border:#1e2433;--accent:#3b82f6;--accent2:#f59e0b;--accent3:#10b981;--text:#e2e8f0;--muted:#64748b;--pass:#10b981;--fail:#ef4444;--skip:#f59e0b;--andrew:#818cf8;--jesse:#f472b6}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:24px 48px;display:flex;justify-content:space-between;align-items:flex-start}
+  .header-left h1{font-size:20px;font-weight:700;color:#fff}.header-left h1 span{color:var(--accent)}
+  .header-left p{color:var(--muted);font-size:11px;margin-top:4px;font-family:'IBM Plex Mono',monospace}
+  .header-right{text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);line-height:2}
+  .header-right strong{color:var(--accent2)}
+  .sync-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 48px;display:flex;align-items:center;gap:16px;font-family:'IBM Plex Mono',monospace;font-size:11px}
+  .sync-status{display:flex;align-items:center;gap:6px}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+  .sync-dot.synced{background:var(--pass)}.sync-dot.syncing{background:var(--accent2);animation:pulse 1s infinite}.sync-dot.error{background:var(--fail)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  .sync-label{color:var(--muted)}.last-sync{color:var(--muted);font-size:10px}
+  .tester-legend{margin-left:auto;display:flex;align-items:center;gap:16px}
+  .tester-pill{display:flex;align-items:center;gap:6px;font-size:11px}
+  .tester-dot{width:10px;height:10px;border-radius:50%}
+  .tester-dot.andrew{background:var(--andrew)}.tester-dot.jesse{background:var(--jesse)}
+  .progress-bar-wrap{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 48px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+  .progress-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap}
+  .progress-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:2px;transition:width .3s ease;width:0%}
+  .progress-count{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text);white-space:nowrap}
+  .legend{display:flex;gap:12px;align-items:center}
+  .legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+  .dot{width:8px;height:8px;border-radius:50%}.dot.pass{background:var(--pass)}.dot.fail{background:var(--fail)}.dot.skip{background:var(--skip)}
+  .container{max-width:1300px;margin:0 auto;padding:40px 48px}
+  .section{margin-bottom:48px}
+  .section-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);background:rgba(59,130,246,.1);padding:2px 8px;border-radius:3px;border:1px solid rgba(59,130,246,.2)}
+  .section-title{font-size:16px;font-weight:700;color:#fff}
+  .section-count{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse}
+  thead th{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 12px;text-align:left;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border)}
+  th.ac{color:var(--andrew)}th.jc{color:var(--jesse)}
+  tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
+  tbody tr:hover{background:rgba(255,255,255,.015)}
+  tbody td{padding:8px 12px;vertical-align:top}
+  .test-id{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap}
+  .test-name{font-size:13px;color:var(--text);font-weight:600}
+  .test-steps{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .test-steps ol{padding-left:16px}.test-steps ol li{margin-bottom:2px}
+  .expected{font-size:12px;color:var(--accent3);font-family:'IBM Plex Mono',monospace;line-height:1.4}
+  .tl{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;margin-bottom:4px}
+  .tl.a{color:var(--andrew)}.tl.j{color:var(--jesse)}
+  select.ss{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:11px;font-family:'IBM Plex Mono',monospace;width:100%;cursor:pointer;appearance:none;min-width:90px}
+  select.ss.pass{border-color:var(--pass);color:var(--pass);background:rgba(16,185,129,.08)}
+  select.ss.fail{border-color:var(--fail);color:var(--fail);background:rgba(239,68,68,.08)}
+  select.ss.skip{border-color:var(--skip);color:var(--skip);background:rgba(245,158,11,.08)}
+  select.ss:focus{outline:none;border-color:var(--accent)}
+  textarea.ni{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 6px;border-radius:4px;font-size:11px;font-family:'IBM Plex Sans',sans-serif;width:100%;min-height:34px;resize:vertical}
+  textarea.ni:focus{outline:none;border-color:var(--accent)}
+  .pb{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;display:inline-block;margin-top:4px}
+  .p0{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+  .p1{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+  .p2{background:rgba(99,102,241,.15);color:#a5b4fc;border:1px solid rgba(99,102,241,.3)}
+  .sub-label{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--accent2);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:3px;padding:1px 6px;display:inline-block;margin-bottom:4px}
+  .footer{background:var(--surface);border-top:1px solid var(--border);padding:24px 48px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .footer-actions{display:flex;gap:12px}
+  .btn{padding:8px 16px;border-radius:5px;font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+  .btn:hover{opacity:.85}.btn-primary{background:var(--accent);color:#fff}.btn-secondary{background:var(--border);color:var(--text)}.btn-danger{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+  .summary-stats{display:flex;gap:24px;font-family:'IBM Plex Mono',monospace;font-size:12px}
+  .stat{display:flex;flex-direction:column;align-items:center}
+  .stat-num{font-size:20px;font-weight:700}.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .stat-pass .stat-num{color:var(--pass)}.stat-fail .stat-num{color:var(--fail)}.stat-skip .stat-num{color:var(--skip)}.stat-pend .stat-num{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left"><h1>MFC Staging <span>Test Plan</span></h1><p>stg-httpsmyfairclaimcom-mfcstaging.kinsta.cloud — Pre-Cutover Validation</p></div>
+  <div class="header-right"><div>Version: <strong>1.0</strong></div><div>Date: <strong id="test-date"></strong></div><div>Environment: <strong>Kinsta Staging</strong></div><div>Stripe Mode: <strong>TEST</strong></div></div>
+</div>
+<div class="sync-bar">
+  <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span class="sync-label" id="sync-label">Connecting...</span></div>
+  <span class="last-sync" id="last-sync"></span>
+  <div class="tester-legend">
+    <div class="tester-pill"><div class="tester-dot andrew"></div><span style="color:var(--andrew);font-family:'IBM Plex Mono',monospace;font-size:11px">Andrew</span></div>
+    <div class="tester-pill"><div class="tester-dot jesse"></div><span style="color:var(--jesse);font-family:'IBM Plex Mono',monospace;font-size:11px">Jesse</span></div>
+    <span style="color:var(--muted);font-size:10px">· syncs every 10s</span>
+  </div>
+</div>
+<div class="progress-bar-wrap">
+  <span class="progress-label">Overall Progress</span>
+  <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  <span class="progress-count" id="progress-count">0 / 0</span>
+  <div class="legend"><div class="legend-item"><div class="dot pass"></div>Pass</div><div class="legend-item"><div class="dot fail"></div>Fail</div><div class="legend-item"><div class="dot skip"></div>Skip</div></div>
+</div>
+<div class="container" id="main-container"></div>
+<div class="footer">
+  <div class="summary-stats">
+    <div class="stat stat-pass"><span class="stat-num" id="stat-pass">0</span><span class="stat-label">Pass</span></div>
+    <div class="stat stat-fail"><span class="stat-num" id="stat-fail">0</span><span class="stat-label">Fail</span></div>
+    <div class="stat stat-skip"><span class="stat-num" id="stat-skip">0</span><span class="stat-label">Skip</span></div>
+    <div class="stat stat-pend"><span class="stat-num" id="stat-pend">0</span><span class="stat-label">Pending</span></div>
+  </div>
+  <div class="footer-actions">
+    <button class="btn btn-secondary" onclick="exportCSV()">Export CSV</button>
+    <button class="btn btn-primary" onclick="forceSync()">Force Sync</button>
+    <button class="btn btn-danger" onclick="resetAll()">Reset All</button>
+  </div>
+</div>
+<script>
+const BIN_ID='69e4dd9636566621a8ccc9e5';
+const API_KEY='$2a$10$h0q96IkaPK3gvwTHbW5s.ei.sLuZElAN7r2RIR4XEJF27tT4pmZly';
+const API_URL=`https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const SECTIONS=[
+  {num:'01',title:'DV Calculation Accuracy',tests:[
+    {id:'DV-01',p:'p0',name:'Free Calculator vs Essential Report — Same Vehicle',sub:'',steps:['Run free calculator with a known vehicle','Note midrange DV value','Purchase Essential for same vehicle and damage level','Compare report DV to calculator midrange'],exp:'Calculator midrange ≤ report value. Values directionally consistent.'},
+    {id:'DV-02',p:'p0',name:'Severity Multipliers — Minor / Moderate / Severe / Total Loss',sub:'',steps:['Run 4 Essential reports with identical vehicle varying only damage severity','Record DV output for each'],exp:'Minor &lt; Moderate &lt; Severe &lt; Total Loss. Multipliers: 0.30 / 0.55 / 0.80 / 1.05'},
+    {id:'DV-03',p:'p0',name:'PAMV Data — MarketCheck Returns Valid Value',sub:'',steps:['Submit order with a real VIN','Check PDF for PAMV value','Verify PAMV is not $0 or null'],exp:'PAMV populated from MarketCheck. Realistic market value shown.'},
+    {id:'DV-04',p:'p0',name:'No PAMV — Essential',sub:'NO PAMV PATH',steps:['Submit order with VIN that returns no MarketCheck data','Verify report page, admin email, consumer email, PDF behavior'],exp:'No PAMV email fires. Admin notified. No blank or broken report.'},
+    {id:'DV-05',p:'p0',name:'No PAMV — Professional',sub:'NO PAMV PATH',steps:['Same as DV-04 for Professional tier'],exp:'No PAMV handled gracefully for Professional tier.'},
+    {id:'DV-06',p:'p0',name:'No PAMV — Premium',sub:'NO PAMV PATH',steps:['Same as DV-04 for Premium tier'],exp:'No PAMV handled gracefully for Premium tier.'},
+  ]},
+  {num:'02',title:'Online Checkout — All Tiers',tests:[
+    {id:'CHK-01',p:'p0',name:'Essential — Full Purchase Flow',sub:'',steps:['Go to /diminished-value/ → Essential','Complete form, use test card 4242 4242 4242 4242','Check report page, admin email, consumer email, LossIntel PDF'],exp:'Payment succeeds. Report page shows DV. Admin + consumer emails fire. LossIntel PDF generates.'},
+    {id:'CHK-02',p:'p0',name:'Professional — Full Purchase Flow',sub:'',steps:['Purchase Professional','Verify LossIntel + VehicleIntel PDFs generate','Verify CFG token issued'],exp:'Both PDFs generate. CFG token issued. Admin + consumer emails fire.'},
+    {id:'CHK-03',p:'p0',name:'Premium — Full Purchase Flow',sub:'',steps:['Purchase Premium','Verify both PDFs + CFG/IRG/IDG tokens issued'],exp:'Both PDFs + 3 tool tokens. All emails fire correctly.'},
+    {id:'CHK-04',p:'p1',name:'Payment Failure — Declined Card',sub:'',steps:['Use Stripe test card 4000 0000 0000 0002','Verify error handling on checkout page'],exp:'Friendly error shown. No order created. No email sent. User can retry.'},
+    {id:'CHK-05',p:'p0',name:'Stripe Webhook Signature Verification',sub:'',steps:['Confirm webhook endpoint in Stripe dashboard points to staging URL','Complete purchase','Check debug.log for webhook success'],exp:'Webhook fires. Signature verifies. No 400/500 in Stripe webhook log.'},
+  ]},
+  {num:'03',title:'Upgrade Paths — All Combinations',tests:[
+    {id:'UPG-01',p:'p0',name:'Essential → Professional (Online)',sub:'',steps:['Purchase Essential','Use upgrade link','Pay difference','Verify VehicleIntel PDF and CFG token'],exp:'Charge = difference only. VehicleIntel PDF + CFG token issued.'},
+    {id:'UPG-02',p:'p0',name:'Essential → Premium (Online)',sub:'',steps:['Purchase Essential','Upgrade to Premium','Verify both PDFs and all 3 tokens'],exp:'Charge = Premium − Essential. Both PDFs + 3 tokens.'},
+    {id:'UPG-03',p:'p0',name:'Professional → Premium (Online)',sub:'',steps:['Purchase Professional','Upgrade to Premium','Verify IRG + IDG tokens added'],exp:'Charge = Premium − Professional. IRG + IDG added. Both PDFs regenerated.'},
+    {id:'UPG-04',p:'p1',name:'Essential → Professional — No PAMV Original Order',sub:'NO PAMV PATH',steps:['Purchase Essential with No PAMV vehicle','Upgrade to Professional'],exp:'Upgrade processes correctly. No PAMV state handled gracefully.'},
+    {id:'UPG-05',p:'p1',name:'Essential → Premium — No PAMV Original Order',sub:'NO PAMV PATH',steps:['Purchase Essential with No PAMV vehicle','Upgrade to Premium'],exp:'Full Premium upgrade. No PAMV gracefully handled.'},
+  ]},
+  {num:'04',title:'Phone Orders — All Combinations',tests:[
+    {id:'PH-01',p:'p0',name:'Phone Order — Essential (Standard PAMV)',sub:'',steps:['Admin Hub → Phone Orders → enter details → Essential','Send Brevo payment link (template 179)','Complete payment via link','Verify report generation and emails'],exp:'Order in DB. Payment link fires. Report + admin + consumer emails on payment.'},
+    {id:'PH-02',p:'p0',name:'Phone Order — Professional (Standard PAMV)',sub:'',steps:['Phone order for Professional','Verify both PDFs + CFG token'],exp:'Both PDFs + CFG token. Consumer email has both PDF links.'},
+    {id:'PH-03',p:'p0',name:'Phone Order — Premium (Standard PAMV)',sub:'',steps:['Phone order for Premium','Verify both PDFs + 3 tool tokens'],exp:'Both PDFs + 3 tool tokens. All emails correct.'},
+    {id:'PH-04',p:'p0',name:'Phone Order — Essential, No PAMV',sub:'NO PAMV PATH',steps:['Phone order with No PAMV vehicle at Essential'],exp:'No PAMV email fires to consumer and admin. No broken PDF.'},
+    {id:'PH-05',p:'p0',name:'Phone Order — Professional, No PAMV',sub:'NO PAMV PATH',steps:['Phone order with No PAMV vehicle at Professional'],exp:'No PAMV handled gracefully for Professional.'},
+    {id:'PH-06',p:'p0',name:'Phone Order — Premium, No PAMV',sub:'NO PAMV PATH',steps:['Phone order with No PAMV vehicle at Premium'],exp:'No PAMV handled gracefully for Premium.'},
+    {id:'PH-07',p:'p1',name:'Phone Upgrade — Essential → Professional',sub:'',steps:['Create phone order at Essential','Upgrade to Professional via Admin Hub'],exp:'PAMV read from mfc_phone_orders. VehicleIntel + CFG issued.'},
+    {id:'PH-08',p:'p1',name:'Phone Upgrade — Essential → Premium',sub:'',steps:['Create phone order at Essential','Upgrade to Premium via Admin Hub'],exp:'Full Premium via phone. All 3 tools + both PDFs.'},
+    {id:'PH-09',p:'p1',name:'Phone Upgrade — Professional → Premium',sub:'',steps:['Create phone order at Professional','Upgrade to Premium via Admin Hub'],exp:'IRG + IDG tokens added. Both PDFs regenerated.'},
+  ]},
+  {num:'05',title:'HTML Tools — CFG / IRG / IDG Access, IP Limiting, Timeout',tests:[
+    {id:'TOOL-01',p:'p0',name:'CFG Access — Valid Professional Token',sub:'',steps:['Purchase Professional','Click CFG link from email','Confirm tool loads with full content'],exp:'CFG loads. All sections accessible. Token validates successfully.'},
+    {id:'TOOL-02',p:'p0',name:'IRG + IDG Access — Valid Premium Token',sub:'',steps:['Purchase Premium','Access IRG and IDG from email links'],exp:'IRG and IDG both load. All sections accessible.'},
+    {id:'TOOL-03',p:'p1',name:'CFG Blocked — Essential Token',sub:'',steps:['Purchase Essential','Manually attempt to access CFG URL'],exp:'Access denied. Upgrade prompt shown. Tool content not visible.'},
+    {id:'TOOL-04',p:'p1',name:'IRG/IDG Blocked — Professional Token',sub:'',steps:['Purchase Professional','Manually attempt to access IRG or IDG URL'],exp:'IRG/IDG access denied for Professional. Upgrade prompt shown.'},
+    {id:'TOOL-05',p:'p1',name:'IP Limit — 4th Unique IP Blocked',sub:'',steps:['Access a tool from 3 different IPs using VPN','Attempt access from a 4th IP'],exp:'4th IP blocked. Error shown. First 3 IPs still work.'},
+    {id:'TOOL-06',p:'p1',name:'Token Expiry — 90-Day Timeout',sub:'',steps:['Set token expiry to past date in DB','Attempt tool access with expired token'],exp:'Access denied with expired message. No tool content visible.'},
+    {id:'TOOL-07',p:'p1',name:'Invalid / Tampered Token',sub:'',steps:['Modify last character of a valid token URL','Attempt tool access'],exp:'Access denied. No tool content exposed.'},
+  ]},
+  {num:'06',title:'Email — Brevo Delivery & Content',tests:[
+    {id:'EMAIL-01',p:'p0',name:'Admin Order Notification — Essential',sub:'',steps:['Complete Essential purchase','Check andrew@myfairclaim.com within 2 minutes'],exp:'Admin email received. Contains customer name, VIN, tier, DV value.'},
+    {id:'EMAIL-02',p:'p0',name:'Consumer Report Email — Essential (LossIntel URL)',sub:'',steps:['Complete Essential purchase','Verify consumer email content and PDF link'],exp:'Consumer email has working LOSSINTEL_URL. PDF downloads from link.'},
+    {id:'EMAIL-03',p:'p0',name:'Consumer Report Email — Professional (Both URLs)',sub:'',steps:['Complete Professional purchase','Verify consumer email has both PDF links'],exp:'LOSSINTEL_URL + VEHICLEINTEL_URL both working. Both PDFs download.'},
+    {id:'EMAIL-04',p:'p0',name:'No PAMV Consumer Email — Correct Template Fires',sub:'NO PAMV PATH',steps:['Complete purchase with No PAMV vehicle','Verify which email template consumer receives'],exp:'No PAMV specific template fires. NOT the standard report email. Admin also notified.'},
+    {id:'EMAIL-05',p:'p1',name:'Brevo Automation — Correct List Enrollment on Purchase',sub:'',steps:['Complete a purchase','Check Brevo for contact list assignment','Confirm automation enrolled'],exp:'Contact in correct Brevo list per tier. Automation sequence running.'},
+    {id:'EMAIL-06',p:'p1',name:'Brevo List Transition on Upgrade',sub:'',steps:['Complete a purchase then upgrade','Check Brevo contact list after upgrade'],exp:'Contact moved from old list to new list. Old automation stopped, new started.'},
+  ]},
+  {num:'07',title:'Free Calculator & Lead Capture',tests:[
+    {id:'CALC-01',p:'p0',name:'Free Calculator — Submission & DV Display',sub:'',steps:['Complete calculator form with valid vehicle data','Submit and view results'],exp:'DV range displayed (low/mid/high). Results make sense for vehicle entered.'},
+    {id:'CALC-02',p:'p1',name:'Free Calculator — Lead Saved to DB & Brevo List 14',sub:'',steps:['Submit calculator form','Check wp_mfc_calculator_submissions in DB','Check Brevo List 14 for contact'],exp:'Submission saved to DB. Contact enrolled in Brevo List 14.'},
+    {id:'CALC-03',p:'p2',name:'Free Calculator — Invalid Email Rejected (MX Validation)',sub:'',steps:['Submit with fake email domain','Submit with real email domain'],exp:'Fake domain rejected. Real email domains pass.'},
+  ]},
+  {num:'08',title:'PDF Report Verification — All 6 Templates',tests:[
+    {id:'PDF-01',p:'p0',name:'LossIntel — Essential',sub:'',steps:['Open LossIntel PDF from Essential order','Review all sections'],exp:'All sections present. DV populated. Cert page included. No blank pages.'},
+    {id:'PDF-02',p:'p0',name:'LossIntel — Professional',sub:'',steps:['Open LossIntel PDF from Professional order'],exp:'Professional styling. All sections complete.'},
+    {id:'PDF-03',p:'p0',name:'LossIntel — Premium',sub:'',steps:['Open LossIntel PDF from Premium order'],exp:'Premium gold styling. All sections complete.'},
+    {id:'PDF-04',p:'p0',name:'VehicleIntel — Professional',sub:'',steps:['Open VehicleIntel PDF from Professional order','Verify vehicle data fields'],exp:'MarketCheck data populated. Price/miles are numbers not arrays. No blank fields.'},
+    {id:'PDF-05',p:'p0',name:'VehicleIntel — Premium',sub:'',steps:['Open VehicleIntel PDF from Premium order'],exp:'Same as PDF-04 with Premium styling.'},
+    {id:'PDF-06',p:'p0',name:'Second PDF Timeout — Both PDFs Generate',sub:'',steps:['Complete Professional or Premium order','Verify both PDFs generate without timeout'],exp:'Both PDFs generate without Nginx timeout. Shutdown hook fires. No partial PDF.'},
+  ]},
+  {num:'09',title:'Front-End & Site Health',tests:[
+    {id:'FE-01',p:'p1',name:'Homepage Loads — All Sections Visible',sub:'',steps:['Load homepage in browser','Check all sections and browser console'],exp:'Hero, pricing cards, calculator bar, FAQ, video all load. No broken images or JS errors.'},
+    {id:'FE-02',p:'p1',name:'/diminished-value/ — Pricing Cards & Report Previews',sub:'',steps:['Load /diminished-value/','Check all 3 tier cards and lock badges'],exp:'All 3 tier cards visible. Lock badges on CFG/IRG/IDG previews. Buy buttons functional.'},
+    {id:'FE-03',p:'p1',name:'Mobile Responsiveness',sub:'',steps:['Load homepage and /diminished-value/ on mobile or DevTools mobile mode'],exp:'No horizontal scroll. Cards stack correctly. Calculator bar visible. CTAs tappable.'},
+    {id:'FE-04',p:'p2',name:'Blog Posts Load — Schema & Formatting',sub:'',steps:['Load blog index and a single post'],exp:'Blog index and posts load. Author info shows. No schema errors.'},
+    {id:'FE-05',p:'p0',name:'Admin Hub — Auth & All Tools Accessible',sub:'',steps:['Navigate to Admin Hub','Verify session auth','Check Phone Orders and Manual Fulfillment tools'],exp:'Admin Hub loads with session auth. Phone Orders + Manual Fulfillment accessible.'},
+  ]},
+];
+
+function buildSections(){
+  const c=document.getElementById('main-container');
+  SECTIONS.forEach(sec=>{
+    const d=document.createElement('div');
+    d.className='section';
+    d.innerHTML=`<div class="section-header"><span class="section-num">${sec.num}</span><span class="section-title">${sec.title}</span><span class="section-count" id="count-${sec.num}"></span></div>
+    <table><thead><tr><th style="width:70px">ID</th><th style="width:28%">Test</th><th style="width:20%">Expected Result</th><th class="ac" style="width:60px">Andrew</th><th style="width:90px">Status</th><th>Notes</th><th class="jc" style="width:60px">Jesse</th><th style="width:90px">Status</th><th>Notes</th></tr></thead>
+    <tbody>${sec.tests.map(t=>{
+      const steps=t.steps.length?`<div class="test-steps"><ol>${t.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>`:'';
+      const sub=t.sub?`<div class="sub-label">${t.sub}</div>`:'';
+      return `<tr data-id="${t.id}">
+        <td class="test-id">${t.id}<br><span class="pb ${t.p}">${t.p.toUpperCase()}</span></td>
+        <td>${sub}<div class="test-name">${t.name}</div>${steps}</td>
+        <td class="expected">${t.exp}</td>
+        <td><div class="tl a">▸ Andrew</div></td>
+        <td><select class="ss" data-tid="${t.id}" data-who="andrew" onchange="hc(this)"><option value="">Pending</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="skip">Skip</option></select></td>
+        <td><textarea class="ni" data-tid="${t.id}" data-who="andrew" placeholder="Andrew's notes..." oninput="scheduleSync()"></textarea></td>
+        <td><div class="tl j">▸ Jesse</div></td>
+        <td><select class="ss" data-tid="${t.id}" data-who="jesse" onchange="hc(this)"><option value="">Pending</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="skip">Skip</option></select></td>
+        <td><textarea class="ni" data-tid="${t.id}" data-who="jesse" placeholder="Jesse's notes..." oninput="scheduleSync()"></textarea></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+    c.appendChild(d);
+  });
+}
+
+let syncTimer=null,lastData='',isSyncing=false;
+function setSS(s,m){document.getElementById('sync-dot').className='sync-dot '+s;document.getElementById('sync-label').textContent=m;}
+function setLS(){document.getElementById('last-sync').textContent='Last sync: '+new Date().toLocaleTimeString();}
+function collect(){
+  const s={};
+  document.querySelectorAll('select.ss').forEach(x=>{const id=x.dataset.tid,w=x.dataset.who;if(!s[id])s[id]={};s[id][w+'_s']=x.value;});
+  document.querySelectorAll('textarea.ni').forEach(x=>{const id=x.dataset.tid,w=x.dataset.who;if(!s[id])s[id]={};s[id][w+'_n']=x.value;});
+  return s;
+}
+function apply(state){
+  document.querySelectorAll('select.ss').forEach(x=>{const id=x.dataset.tid,w=x.dataset.who;if(state[id]&&state[id][w+'_s']!==undefined){x.value=state[id][w+'_s'];x.className='ss '+(x.value||'');}});
+  document.querySelectorAll('textarea.ni').forEach(x=>{const id=x.dataset.tid,w=x.dataset.who;if(state[id]&&state[id][w+'_n']!==undefined)x.value=state[id][w+'_n'];});
+  updateStats();
+}
+async function push(){
+  if(isSyncing)return;isSyncing=true;setSS('syncing','Syncing...');
+  const s=collect();
+  try{await fetch(API_URL,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},body:JSON.stringify({tests:s})});lastData=JSON.stringify(s);setSS('synced','Synced');setLS();}
+  catch(e){setSS('error','Sync error');}
+  isSyncing=false;
+}
+async function pull(){
+  try{
+    const r=await fetch(API_URL+'/latest',{headers:{'X-Master-Key':API_KEY}});
+    const j=await r.json();const s=j?.record?.tests||{};const str=JSON.stringify(s);
+    if(str!==lastData){apply(s);lastData=str;setLS();setSS('synced','Synced');}
+  }catch(e){setSS('error','Connection error');}
+}
+function hc(sel){sel.className='ss '+(sel.value||'');updateStats();scheduleSync();}
+function scheduleSync(){if(syncTimer)clearTimeout(syncTimer);syncTimer=setTimeout(push,1500);}
+function forceSync(){push();}
+function updateStats(){
+  const all=document.querySelectorAll('select.ss');
+  let pass=0,fail=0,skip=0,pend=0;
+  all.forEach(s=>{if(s.value==='pass')pass++;else if(s.value==='fail')fail++;else if(s.value==='skip')skip++;else pend++;});
+  const total=all.length,done=pass+fail+skip;
+  document.getElementById('stat-pass').textContent=pass;
+  document.getElementById('stat-fail').textContent=fail;
+  document.getElementById('stat-skip').textContent=skip;
+  document.getElementById('stat-pend').textContent=pend;
+  document.getElementById('progress-fill').style.width=total?(done/total*100)+'%':'0%';
+  document.getElementById('progress-count').textContent=done+' / '+total;
+  SECTIONS.forEach(sec=>{
+    const el=document.getElementById('count-'+sec.num);if(!el)return;
+    let p=0,f=0,pend=0;
+    sec.tests.forEach(t=>{['andrew','jesse'].forEach(w=>{const s=document.querySelector(`select[data-tid="${t.id}"][data-who="${w}"]`);if(!s)return;if(s.value==='pass')p++;else if(s.value==='fail')f++;else pend++;});});
+    el.textContent=`${sec.tests.length} tests · ${p} pass · ${f} fail · ${pend} pending`;
+  });
+}
+function resetAll(){
+  if(!confirm('Reset ALL results for both Andrew and Jesse? This cannot be undone.'))return;
+  document.querySelectorAll('select.ss').forEach(s=>{s.value='';s.className='ss';});
+  document.querySelectorAll('textarea.ni').forEach(t=>t.value='');
+  push();updateStats();
+}
+function exportCSV(){
+  const rows=[['ID','Test','Andrew Status','Andrew Notes','Jesse Status','Jesse Notes']];
+  SECTIONS.forEach(sec=>sec.tests.forEach(t=>{
+    const as=document.querySelector(`select[data-tid="${t.id}"][data-who="andrew"]`)?.value||'pending';
+    const an='"'+(document.querySelector(`textarea[data-tid="${t.id}"][data-who="andrew"]`)?.value||'').replace(/"/g,'""')+'"';
+    const js=document.querySelector(`select[data-tid="${t.id}"][data-who="jesse"]`)?.value||'pending';
+    const jn='"'+(document.querySelector(`textarea[data-tid="${t.id}"][data-who="jesse"]`)?.value||'').replace(/"/g,'""')+'"';
+    rows.push([t.id,'"'+t.name+'"',as,an,js,jn]);
+  }));
+  const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='MFC-Test-Results.csv';a.click();
+}
+document.getElementById('test-date').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+buildSections();
+setSS('syncing','Loading...');
+pull().then(()=>{setSS('synced','Synced');setInterval(pull,10000);});
+updateStats();
+</script>
+</body>
+</html>
